@@ -135,7 +135,7 @@ int main (void)
 	T_x1 = osThreadCreate(osThread(x_Thread1), NULL);	// Create Producer 
 	T_x2 = osThreadCreate(osThread(x_Thread2), NULL);	// Create Consumer
 	T_x3 = osThreadCreate(osThread(x_Thread3), NULL);	// Create Consumer
-	T_x4 = osThreadCreate(osThread(x_Thread4), NULL);	// Create Viewer
+	T_x4 = osThreadCreate(osThread(x_Thread4), NULL);	// Create Viewer to view the data
  
 	osKernelStart ();                         				// Start thread execution 
 }
