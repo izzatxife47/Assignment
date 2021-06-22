@@ -1,3 +1,7 @@
+
+
+
+
 /*----------------------------------------------------------------------------
 	
 	Designers Guide to the Cortex-M Family
@@ -12,18 +16,15 @@ void x_Thread1 (void const *argument);
 void x_Thread2 (void const *argument);
 void x_Thread3 (void const *argument);
 void x_Thread4 (void const *argument);
-void x_Thread5 (void const *argument);
 osThreadDef(x_Thread1, osPriorityNormal, 1, 0);
 osThreadDef(x_Thread2, osPriorityNormal, 1, 0);
 osThreadDef(x_Thread3, osPriorityNormal, 1, 0);
 osThreadDef(x_Thread4, osPriorityNormal, 1, 0);
-osThreadDef(x_Thread5, osPriorityNormal, 1, 0);
 
 osThreadId T_x1;
 osThreadId T_x2;
 osThreadId T_x3;
 osThreadId T_x4;
-osThreadId T_x5;
 
 osMessageQId Q_LED;
 osMessageQDef (Q_LED,0x16,unsigned char);
@@ -44,13 +45,11 @@ long int x=0;
 long int i=0;
 long int j=0;
 long int k=0;
-long int z=0;
 
 const unsigned int N = 5;
 unsigned char buffer[N];
 unsigned int insertPtr = 0;
 unsigned int readPtr = 0;
-
 unsigned char buff_0;
 unsigned char buff_1;
 unsigned char buff_2;
@@ -91,57 +90,59 @@ unsigned char get(){
 void x_Thread1 (void const *argument) 
 {
 	//producer
+
 	unsigned char item = 0x41;		// Data in Character
 	for(;;){
 		put(item++);
+		osSemaphoreRelease(firsttake_semaphore);
 	}
-}	
+}
+	
 
 void x_Thread2 (void const *argument) 
 {
 	// Consumer
 	unsigned int data = 0x00;
+	
 	for(;;){
-		osSemaphoreWait(firsttake_semaphore, osWaitForever);	
+		osSemaphoreWait(secondtake_semaphore, osWaitForever);	
+		
 		data = get();
+		//SendChar(data);
 		osMutexWait(x_mutex, osWaitForever);
 		osMessagePut(Q_LED,data,osWaitForever);          //Place a value in the message queue
 		osMutexRelease(x_mutex);
-		osSemaphoreRelease(secondtake_semaphore);
+		osSemaphoreRelease(firsttake_semaphore);
 	}
+	
 }
 
 void x_Thread3 (void const *argument) 
 {
 	// Consumer
 	unsigned int c2data = 0x00;
+	
 	for(;;){
-		osSemaphoreWait(secondtake_semaphore, osWaitForever);
+		osSemaphoreWait(firsttake_semaphore, osWaitForever);
+		
 		c2data = get();
 		osMutexWait(x_mutex, osWaitForever);
 		osMessagePut(Q_LED,c2data,osWaitForever);        //Place a value in the message queue
 		osMutexRelease(x_mutex);
-		osSemaphoreRelease(firsttake_semaphore);
+		osSemaphoreRelease(secondtake_semaphore);
 	}
+	
 }
 
-void x_Thread4 (void const *argument) 
-{
-	// Consumer
-	unsigned int c3data = 0x00;
-	for(; z<loopcount; z++){
-		c3data = get();
-		osMessagePut(Q_LED,c3data,osWaitForever);        //Place a value in the message queue
-	}
-}
-void x_Thread5(void const *argument)
+void x_Thread4(void const *argument)
 {
 	// Viewer
-	osMessagePut(Q_LED,0x20,osWaitForever);
 	for(;;){
+
 		result = 	osMessageGet(Q_LED,osWaitForever);		//wait for a message to arrive
 		SendChar(result.value.v);
-	}
+
+		}
 }
 
 int main (void) 
@@ -150,7 +151,7 @@ int main (void)
 	USART1_Init();
 	Item_semaphore = osSemaphoreCreate(osSemaphore(Item_semaphore), 0);
 	Space_semaphore = osSemaphoreCreate(osSemaphore(Space_semaphore), N);
-	secondtake_semaphore = osSemaphoreCreate(osSemaphore(secondtake_semaphore), N);
+	secondtake_semaphore = osSemaphoreCreate(osSemaphore(secondtake_semaphore), 0);
 	firsttake_semaphore = osSemaphoreCreate(osSemaphore(firsttake_semaphore), 0);
 	x_mutex = osMutexCreate(osMutex(x_mutex));	
 	
@@ -159,11 +160,11 @@ int main (void)
 	T_x1 = osThreadCreate(osThread(x_Thread1), NULL);	// Create Producer 
 	T_x2 = osThreadCreate(osThread(x_Thread2), NULL);	// Create Consumer
 	T_x3 = osThreadCreate(osThread(x_Thread3), NULL);	// Create Consumer
-	T_x4 = osThreadCreate(osThread(x_Thread4), NULL);	// Create Viewer to view the data
-	T_x5 = osThreadCreate(osThread(x_Thread4), NULL);
-	
+	T_x4 = osThreadCreate(osThread(x_Thread4), NULL);	// Create Viewer
+ 
 	osKernelStart ();                         				// Start thread execution 
 }
+
 
 
 
