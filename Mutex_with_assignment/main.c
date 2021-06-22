@@ -1,4 +1,3 @@
-
 /*----------------------------------------------------------------------------
 	
 	Designers Guide to the Cortex-M Family
@@ -8,7 +7,6 @@
 #include "stm32f10x.h"
 #include "cmsis_os.h"
 #include "uart.h"
-
 
 void x_Thread1 (void const *argument);
 void x_Thread2 (void const *argument);
@@ -34,6 +32,10 @@ osSemaphoreId Item_semaphore;                   // Semaphore ID
 osSemaphoreDef(Item_semaphore);                 // Semaphore definition
 osSemaphoreId Space_semaphore;                  // Semaphore ID
 osSemaphoreDef(Space_semaphore);                // Semaphore definition
+osSemaphoreId secondtake_semaphore;             // Semaphore ID
+osSemaphoreDef(secondtake_semaphore);           // Semaphore definition
+osSemaphoreId firsttake_semaphore;              // Semaphore ID
+osSemaphoreDef(firsttake_semaphore);            // Semaphore definition
 
 long int x=0;
 long int i=0;
@@ -49,20 +51,19 @@ unsigned char buff_1;
 unsigned char buff_2;
 unsigned char buff_3;
 unsigned char buff_4;
-unsigned char output;
 
 void put(unsigned char an_item){
 	osSemaphoreWait(Space_semaphore, osWaitForever);
 	osMutexWait(x_mutex, osWaitForever);
 	buffer[insertPtr] = an_item;
 	insertPtr = (insertPtr + 1) % N;	// Write Pointer
-	osMutexRelease(x_mutex);
-	osSemaphoreRelease(Item_semaphore);
 	buff_0 = buffer[0];			// First slot buffer
 	buff_1 = buffer[1];			// Second slot buffer
 	buff_2 = buffer[2];			// Third slot buffer
 	buff_3 = buffer[3];			// Forth slot buffer
 	buff_4 = buffer[4];			// Fifth slot buffer
+	osMutexRelease(x_mutex);
+	osSemaphoreRelease(Item_semaphore);
 }
 
 unsigned char get(){
@@ -71,46 +72,58 @@ unsigned char get(){
 	osMutexWait(x_mutex, osWaitForever);
 	rr = buffer[readPtr];
 	readPtr = (readPtr + 1) % N;		// Read Pointer	
-	osMutexRelease(x_mutex);
-	osSemaphoreRelease(Space_semaphore);
 	buff_0 = buffer[0];			// First slot buffer
 	buff_1 = buffer[1];			// Second slot buffer
 	buff_2 = buffer[2];			// Third slot buffer
 	buff_3 = buffer[3];			// Forth slot buffer
-	buff_4 = buffer[4];			// Fifth slot buffer
+	buff_4 = buffer[4];			// Fifth slot buffer	
+	osMutexRelease(x_mutex);
+	osSemaphoreRelease(Space_semaphore);
 	return rr;
 }
 
-int loopcount = 15;
 
 void x_Thread1 (void const *argument) 
 {
 	//producer
 	unsigned char item = 0x41;		// Data in Character
-	for(; i<loopcount; i++){
+	for(;;){
 		put(item++);
+		
 	}
-}
+}	
 
 void x_Thread2 (void const *argument) 
 {
 	// Consumer
 	unsigned int data = 0x00;
-	for(; j<loopcount; j++){
+	
+	for(;;){
+		osSemaphoreWait(firsttake_semaphore, osWaitForever);	
 		data = get();
 		//SendChar(data);
+		osMutexWait(x_mutex, osWaitForever);
 		osMessagePut(Q_LED,data,osWaitForever);          //Place a value in the message queue
+		osMutexRelease(x_mutex);
+		osSemaphoreRelease(secondtake_semaphore);
 	}
+	
 }
 
 void x_Thread3 (void const *argument) 
 {
 	// Consumer
 	unsigned int c2data = 0x00;
-	for(; k<loopcount; k++){
+	
+	for(;;){
+		osSemaphoreWait(secondtake_semaphore, osWaitForever);
 		c2data = get();
+		osMutexWait(x_mutex, osWaitForever);
 		osMessagePut(Q_LED,c2data,osWaitForever);        //Place a value in the message queue
+		osMutexRelease(x_mutex);
+		osSemaphoreRelease(firsttake_semaphore);
 	}
+	
 }
 
 void x_Thread4(void const *argument)
@@ -128,6 +141,8 @@ int main (void)
 	USART1_Init();
 	Item_semaphore = osSemaphoreCreate(osSemaphore(Item_semaphore), 0);
 	Space_semaphore = osSemaphoreCreate(osSemaphore(Space_semaphore), N);
+	secondtake_semaphore = osSemaphoreCreate(osSemaphore(secondtake_semaphore), N);
+	firsttake_semaphore = osSemaphoreCreate(osSemaphore(firsttake_semaphore), 0);
 	x_mutex = osMutexCreate(osMutex(x_mutex));	
 	
 	Q_LED = osMessageCreate(osMessageQ(Q_LED),NULL);	// Create the message queue
@@ -139,4 +154,6 @@ int main (void)
  
 	osKernelStart ();                         				// Start thread execution 
 }
+
+
 
