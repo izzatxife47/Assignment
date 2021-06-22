@@ -2,7 +2,11 @@
 ".\main.o"
 ".\uart.o"
 ".\led_mcbstm32e.o"
+<<<<<<< HEAD
 "C:\Users\ADMIN\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\RTOS\RTX\LIB\ARM\RTX_CM3.lib"
+=======
+"C:\Users\Aiman\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\RTOS\RTX\LIB\ARM\RTX_CM3.lib"
+>>>>>>> 17be90f3ae7f086afdf88f863639335bc91e853a
 ".\rtx_conf_cm.o"
 ".\gpio_stm32f10x.o"
 ".\startup_stm32f10x_md.o"
