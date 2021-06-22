@@ -50,28 +50,23 @@ const unsigned int N = 5;
 unsigned char buffer[N];
 unsigned int insertPtr = 0;
 unsigned int readPtr = 0;
-<<<<<<< HEAD
+
 unsigned char buff_0;
 unsigned char buff_1;
 unsigned char buff_2;
 unsigned char buff_3;
 unsigned char buff_4;
-=======
->>>>>>> 17be90f3ae7f086afdf88f863639335bc91e853a
 
 void put(unsigned char an_item){
 	osSemaphoreWait(Space_semaphore, osWaitForever);
 	osMutexWait(x_mutex, osWaitForever);
 	buffer[insertPtr] = an_item;
 	insertPtr = (insertPtr + 1) % N;	// Write Pointer
-<<<<<<< HEAD
 	buff_0 = buffer[0];			// First slot buffer
 	buff_1 = buffer[1];			// Second slot buffer
 	buff_2 = buffer[2];			// Third slot buffer
 	buff_3 = buffer[3];			// Forth slot buffer
 	buff_4 = buffer[4];			// Fifth slot buffer
-=======
->>>>>>> 17be90f3ae7f086afdf88f863639335bc91e853a
 	osMutexRelease(x_mutex);
 	osSemaphoreRelease(Item_semaphore);
 }
@@ -82,14 +77,11 @@ unsigned char get(){
 	osMutexWait(x_mutex, osWaitForever);
 	rr = buffer[readPtr];
 	readPtr = (readPtr + 1) % N;		// Read Pointer	
-<<<<<<< HEAD
 	buff_0 = buffer[0];			// First slot buffer
 	buff_1 = buffer[1];			// Second slot buffer
 	buff_2 = buffer[2];			// Third slot buffer
 	buff_3 = buffer[3];			// Forth slot buffer
 	buff_4 = buffer[4];			// Fifth slot buffer	
-=======
->>>>>>> 17be90f3ae7f086afdf88f863639335bc91e853a
 	osMutexRelease(x_mutex);
 	osSemaphoreRelease(Space_semaphore);
 	return rr;
@@ -102,7 +94,6 @@ void x_Thread1 (void const *argument)
 	unsigned char item = 0x41;		// Data in Character
 	for(;;){
 		put(item++);
-		
 	}
 }	
 
@@ -110,24 +101,20 @@ void x_Thread2 (void const *argument)
 {
 	// Consumer
 	unsigned int data = 0x00;
-	
 	for(;;){
 		osSemaphoreWait(firsttake_semaphore, osWaitForever);	
 		data = get();
-		//SendChar(data);
 		osMutexWait(x_mutex, osWaitForever);
 		osMessagePut(Q_LED,data,osWaitForever);          //Place a value in the message queue
 		osMutexRelease(x_mutex);
 		osSemaphoreRelease(secondtake_semaphore);
 	}
-	
 }
 
 void x_Thread3 (void const *argument) 
 {
 	// Consumer
 	unsigned int c2data = 0x00;
-	
 	for(;;){
 		osSemaphoreWait(secondtake_semaphore, osWaitForever);
 		c2data = get();
@@ -136,7 +123,6 @@ void x_Thread3 (void const *argument)
 		osMutexRelease(x_mutex);
 		osSemaphoreRelease(firsttake_semaphore);
 	}
-	
 }
 
 void x_Thread4 (void const *argument) 
@@ -155,7 +141,7 @@ void x_Thread5(void const *argument)
 	for(;;){
 		result = 	osMessageGet(Q_LED,osWaitForever);		//wait for a message to arrive
 		SendChar(result.value.v);
-		}
+	}
 }
 
 int main (void) 
